@@ -10,20 +10,16 @@ const { sequelize } = db; // Import the sequelize instance for transaction manag
 exports.createOrder = async (req, res) => {
   // Note: The userId is extracted from the JWT token in the verifyToken middleware
   const userId = req.userId;
-  const { totalAmount, shippingAddress, paymentMethod, cartItems } = req.body;
+  const { totalAmount, shippingAddress, paymentMethod, cartItems } = req.body; // --- Start a database transaction ---
 
-  // --- Start a database transaction ---
-  // Transactions ensure that all database operations (creating the order,
-  // updating stock) succeed or fail together.
   const t = await sequelize.transaction();
 
   try {
     if (!cartItems || cartItems.length === 0) {
       await t.rollback();
       return res.status(400).send({ message: "Cart is empty." });
-    }
+    } // 1. Check stock availability for all items in one go
 
-    // 1. Check stock availability for all items in one go
     for (const item of cartItems) {
       const product = await Product.findByPk(item.id, { transaction: t });
       if (!product || product.inStock < item.quantity) {
@@ -32,32 +28,23 @@ exports.createOrder = async (req, res) => {
           .status(400)
           .send({ message: `Insufficient stock for product: ${item.name}` });
       }
-    }
+    } // 2. Create the main Order record
 
-    // 2. Create the main Order record
     const order = await Order.create(
       {
         userId: userId,
         totalAmount: totalAmount,
         shippingAddress: shippingAddress,
-        paymentMethod: paymentMethod,
-        // Status is defaulted to 'Pending'
+        paymentMethod: paymentMethod, // Status is defaulted to 'Pending'
       },
       { transaction: t }
-    );
+    ); // 3. Loop through cart items and update the Product stock
 
-    // 3. Loop through cart items and update the Product stock
     for (const item of cartItems) {
       const product = await Product.findByPk(item.id, { transaction: t });
-
-      // The logic here is simplified. In a real application, you'd create a separate
-      // OrderItem table to link products to the order. For this project scope,
-      // we focus on just updating the stock after order creation.
-
       await product.decrement("inStock", { by: item.quantity, transaction: t });
-    }
+    } // 4. Commit the transaction if all steps succeeded
 
-    // 4. Commit the transaction if all steps succeeded
     await t.commit();
 
     res.status(201).send({
@@ -75,7 +62,7 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 2. RETRIEVE all orders for the authenticated user
+// 2. RETRIEVE all orders for the authenticated user (User History)
 exports.getUserOrders = async (req, res) => {
   // userId is attached to the request object by the verifyToken middleware
   const userId = req.userId;
@@ -83,10 +70,7 @@ exports.getUserOrders = async (req, res) => {
   try {
     const orders = await Order.findAll({
       where: { userId: userId },
-      // Sort by creation date, newest first
       order: [["createdAt", "DESC"]],
-      // Optionally, include other related models here (e.g., OrderItems if implemented)
-      // For now, we return only the Order record itself
     });
 
     if (!orders || orders.length === 0) {
@@ -103,4 +87,77 @@ exports.getUserOrders = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+// 3. RETRIEVE ALL orders (Admin Only) <-- NEW FUNCTION
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await db.Order.findAll({
+      // Include the associated User model to show who placed the order
+      include: [{ model: db.User, attributes: ["id", "username", "email"] }],
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!orders || orders.length === 0) {
+      return res
+        .status(404)
+        .send({ message: "No orders found in the system." });
+    }
+
+    res.status(200).send(orders);
+  } catch (error) {
+    console.error("Error fetching all orders for admin:", error);
+    res.status(500).send({
+      message: "Error retrieving all orders.",
+      error: error.message,
+    });
+  }
+};
+
+// 4. UPDATE order status by ID (Admin Only)
+exports.updateOrderStatus = async (req, res) => {
+  const { orderId } = req.params; // Get ID from URL parameter
+  const { status } = req.body; // Get new status from request body // Optional: Basic validation to ensure status is one of the allowed values
+
+  const allowedStatuses = ["Pending", "Shipped", "Delivered", "Cancelled"];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).send({ message: "Invalid status value provided." });
+  }
+
+  try {
+    const [updatedRows] = await db.Order.update(
+      { status: status },
+      { where: { id: orderId } }
+    );
+
+    if (updatedRows === 0) {
+      return res
+        .status(404)
+        .send({ message: `Order with ID ${orderId} not found.` });
+    } // Fetch the updated order to send back confirmation
+
+    const updatedOrder = await db.Order.findByPk(orderId, {
+      // Include User for Admin view consistency
+      include: [{ model: db.User, attributes: ["id", "username", "email"] }],
+    });
+
+    res.status(200).send({
+      message: `Order #${orderId} status updated to ${status}.`,
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    res.status(500).send({
+      message: "Error processing order status update.",
+      error: error.message,
+    });
+  }
+};
+
+// --- FINAL EXPORTS BLOCK ---
+module.exports = {
+  createOrder: exports.createOrder,
+  getUserOrders: exports.getUserOrders,
+  getAllOrders: exports.getAllOrders, // <-- CRUCIAL FIX
+  updateOrderStatus: exports.updateOrderStatus, // <-- CRUCIAL FIX
 };

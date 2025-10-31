@@ -18,11 +18,12 @@ const Header = () => {
     <header className="bg-gray-800 text-white shadow-lg">
       <div className="container mx-auto flex justify-between items-center p-4">
         {/* Logo/Brand */}
-        <Link
-          to="/"
-          className="text-2xl font-bold text-yellow-400 hover:text-yellow-500"
-        >
-          Aura Art Collective
+        <Link to="/">
+          <img
+            src="/photos/logo.png"
+            alt="AuraArtCollective Logo"
+            className="h-10 w-auto object-contain"
+          />
         </Link>
 
         {/* Navigation Links */}
@@ -54,14 +55,36 @@ const Header = () => {
           {/* Conditional Links based on Authentication State */}
           {currentUser ? (
             <>
-              {/* Show Admin Link if user is admin */}
               {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="text-red-400 hover:text-red-500 font-bold"
-                >
-                  Admin Panel
-                </Link>
+                <div className="group relative">
+                  <Link
+                    to="/admin"
+                    className="text-yellow-400 font-bold hover:text-yellow-200"
+                  >
+                    Admin Panel
+                  </Link>
+                  {/* Simple dropdown menu for Admin links */}
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-xl z-20 hidden group-hover:block">
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-white hover:bg-gray-600"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/admin/products"
+                      className="block px-4 py-2 text-sm text-white hover:bg-gray-600"
+                    >
+                      Manage Products
+                    </Link>
+                    <Link
+                      to="/admin/orders"
+                      className="block px-4 py-2 text-sm text-white hover:bg-gray-600"
+                    >
+                      Manage Orders
+                    </Link>
+                  </div>
+                </div>
               )}
 
               {/* Show Logout Button */}

@@ -5,8 +5,6 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 // Import new Admin Components
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminRoute from "./components/AdminRoute";
 import ProductForm from "./components/ProductForm";
 
 // Import Pages
@@ -18,6 +16,9 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminProductPage from "./pages/AdminProductPage";
+import AdminOrderPage from "./pages/AdminOrderPage";
 // We'll add more pages later (e.g., ProductDetail, Cart, Admin)
 
 function App() {
@@ -40,33 +41,12 @@ function App() {
             {/* --- PRODUCT DETAIL ROUTE --- */}
             <Route path="/product/:id" element={<ProductDetailPage />} />
             {/* Admin Protected Route */}
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              }
-            />
-            {/* 2. Add New Product Route */}
-            <Route
-              path="/admin/add"
-              element={
-                <AdminRoute>
-                  <ProductForm mode="add" /> {/* <-- NEW */}
-                </AdminRoute>
-              }
-            />
-            {/* 3. Edit Existing Product Route */}
-            <Route
-              path="/admin/edit/:id"
-              element={
-                <AdminRoute>
-                  <ProductForm mode="edit" /> {/* <-- NEW */}
-                </AdminRoute>
-              }
-            />
-
+            <Route path="/admin" element={<AdminDashboardPage />} />{" "}
+            {/* <-- Updated to use new Dashboard */}
+            <Route path="/admin/products" element={<AdminProductPage />} />
+            <Route path="/admin/orders" element={<AdminOrderPage />} />
+            <Route path="/admin/add" element={<ProductForm />} />
+            <Route path="/admin/edit/:id" element={<ProductForm />} />
             {/* --- ORDER HISTORY ROUTE --- */}
             <Route path="/orders" element={<OrderHistoryPage />} />
           </Routes>

@@ -10,9 +10,8 @@ class OrderService {
   _getAuthHeader() {
     const user = AuthService.getCurrentUser();
     if (user && user.accessToken) {
-      return { Authorization: "Bearer " + user.accessToken };
+      return { "x-access-token": user.accessToken };
     } else {
-      // If no token, the request will fail the verifyToken middleware, which is correct
       return {};
     }
   }
@@ -60,7 +59,47 @@ class OrderService {
       );
     }
   }
-  // You can add getOrderHistory() here later
+
+  // 3. Get ALL system orders (Admin only) <-- NEW METHOD
+  async getAllOrders() {
+    try {
+      const response = await axios.get(API_URL + "all", {
+        headers: this._getAuthHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error("Access Denied. Admin privileges required.");
+      }
+      console.error(
+        "Error fetching all orders:",
+        error.response?.data?.message || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Failed to retrieve all orders."
+      );
+    }
+  }
+
+  // 4. Update order status (Admin only) <-- NEW METHOD
+  async updateOrderStatus(orderId, newStatus) {
+    try {
+      const response = await axios.put(
+        `${API_URL}${orderId}`,
+        { status: newStatus },
+        { headers: this._getAuthHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error updating order #${orderId} status:`,
+        error.response?.data?.message || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Failed to update order status."
+      );
+    }
+  }
 }
 
 export default new OrderService();
