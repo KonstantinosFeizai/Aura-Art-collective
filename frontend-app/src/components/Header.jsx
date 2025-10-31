@@ -1,8 +1,8 @@
 // frontend-app/src/components/Header.jsx
-
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // <-- IMPORT HOOK
-import { useCart } from "../context/CartProvider";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/cart.context.js";
 
 const Header = () => {
   const { currentUser, logout, isAdmin } = useAuth(); // <-- USE HOOK

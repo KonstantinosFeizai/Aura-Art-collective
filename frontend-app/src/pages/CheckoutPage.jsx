@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartProvider";
+import { useCart } from "../context/cart.context.js";
 import OrderService from "../services/order.service";
 
 const CheckoutPage = () => {

@@ -1,7 +1,7 @@
 // frontend-app/src/pages/CartPage.jsx
 
 import React from "react";
-import { useCart } from "../context/CartProvider";
+import { useCart } from "../context/cart.context.js";
 import { Link, useNavigate } from "react-router-dom";
 
 const CartPage = () => {
