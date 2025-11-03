@@ -11,12 +11,12 @@ const Footer = () => {
             className="h-[60px] w-auto object-contain"
           />
         </Link>
-        <p className="mt-4 text-center">
+        <p className="m-4 text-center">
           Copyright © 2025{" "}
           <a href="https://prebuiltui.com">Aura Art collective</a>. All rights
           reservered.
         </p>
-        <div className="flex items-center gap-8 mt-5">
+        <div className="flex space-x-10  m-5">
           <a
             href="#"
             className="hover:-translate-y-0.5 transition-all duration-300"
@@ -139,9 +139,9 @@ const Footer = () => {
             </svg>
           </a>
         </div>
-        {/* <div className="flex items-center gap-10 mt-5">
+        <div className="flex items-center gap-10 mt-5">
           <a
-            href="#"
+            href="/"
             className="font-medium text-gray-500 hover:text-black transition-all"
           >
             Home
@@ -170,7 +170,7 @@ const Footer = () => {
           >
             Help
           </a>
-        </div> */}
+        </div>
       </footer>
     </>
   );
