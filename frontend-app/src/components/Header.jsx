@@ -20,13 +20,13 @@ const Header = () => {
 
   return (
     <header className="bg-gray-800 text-white border-b border-gray-200 shadow-md p-1">
-      <div className="container mx-auto flex justify-between items-center p-4 h-[75px]">
+      <div className="container mx-auto flex justify-between items-center p-4 h-[80px]">
         <Link to="/">
           <img
             src="/photos/logo.png"
             alt="AuraArtCollective Logo"
             // Increased size slightly for visual impact on a cleaner header
-            className="h-[70px] w-auto object-contain"
+            className="h-[80px] w-auto object-contain"
           />
         </Link>
 
