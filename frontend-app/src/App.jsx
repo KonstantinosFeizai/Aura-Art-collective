@@ -19,6 +19,10 @@ import OrderHistoryPage from "./pages/OrderHistoryPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminProductPage from "./pages/AdminProductPage";
 import AdminOrderPage from "./pages/AdminOrderPage";
+import AboutPage from "./pages/AboutPage";
+import ServicesPage from "./pages/ServicesPage";
+import ContactPage from "./pages/ContactPage";
+import HelpPage from "./pages/HelpPage";
 // We'll add more pages later (e.g., ProductDetail, Cart, Admin)
 
 function App() {
@@ -34,6 +38,10 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="/register" element={<RegisterPage />} />
             {/* --- CART AND CHECKOUT ROUTES --- */}
             <Route path="/cart" element={<CartPage />} />

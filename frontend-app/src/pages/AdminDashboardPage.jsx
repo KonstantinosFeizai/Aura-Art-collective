@@ -1,75 +1,107 @@
-import React from "react";
-import { Navigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-
-// We can add actual data fetching here later (Total Orders, Revenue, etc.)
-const dummyStats = [
-  { label: "Total Products", value: "25", icon: "📦", link: "/admin/products" },
-  { label: "Pending Orders", value: "3", icon: "⏳", link: "/admin/orders" },
-  {
-    label: "Total Revenue",
-    value: "$12,450",
-    icon: "💰",
-    link: "/admin/orders",
-  },
-  { label: "New Users (30 Days)", value: "18", icon: "👤", link: "/admin" },
-];
+import React, { useState, useEffect } from "react";
+import AdminService from "../services/admin.service"; // Import the new service
+import { useAuth } from "../context/AuthContext"; // To get the user's token
+import { Link } from "react-router-dom"; // <--- NEW: Import Link for navigation
 
 const AdminDashboardPage = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
+  // Assume useAuth provides a currentUser object with an accessToken property
+  const { currentUser } = useAuth();
+  const [kpis, setKpis] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Enforce Admin and Authentication
-  if (!isAuthenticated || !isAdmin) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    const fetchKpis = async () => {
+      // Check for valid token before attempting to fetch admin data
+      if (!currentUser || !currentUser.accessToken) {
+        setError("Authentication required for dashboard access.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const data = await AdminService.getKpiMetrics(currentUser.accessToken);
+        setKpis(data);
+      } catch (err) {
+        console.error("KPI Fetch Error:", err);
+        setError(
+          "Failed to fetch dashboard data. Check backend connection and user permissions."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKpis();
+  }, [currentUser]);
+
+  if (loading)
+    return <div className="p-6 text-center">Loading dashboard metrics...</div>;
+  if (error) return <div className="p-6 text-red-600 text-center">{error}</div>;
+  if (!kpis)
+    return (
+      <div className="p-6 text-gray-500 text-center">No data available.</div>
+    );
+
+  const kpiCards = [
+    {
+      title: "Total Sales",
+      value: `$${kpis.totalSales}`,
+      color: "bg-green-500",
+    },
+    { title: "Total Orders", value: kpis.totalOrders, color: "bg-blue-500" },
+    {
+      title: "Total Products",
+      value: kpis.totalProducts,
+      color: "bg-yellow-500",
+    },
+    {
+      title: "Last Order Update",
+      value: kpis.latestOrderDate
+        ? new Date(kpis.latestOrderDate).toLocaleDateString()
+        : "N/A",
+      color: "bg-indigo-500",
+    },
+  ];
 
   return (
-    <div className="py-10 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8 border-b pb-4">
-        👋 Welcome to the Admin Dashboard
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">
+        Admin Dashboard Overview
       </h1>
 
-      <p className="text-gray-600 mb-10">
-        Quick links and key metrics to manage your store.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {dummyStats.map((stat) => (
-          <Link to={stat.link} key={stat.label} className="block">
-            <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 border-l-4 border-yellow-500">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-500">
-                  {stat.label}
-                </p>
-                <span className="text-2xl">{stat.icon}</span>
-              </div>
-              <p className="mt-1 text-3xl font-semibold text-gray-900">
-                {stat.value}
-              </p>
-            </div>
-          </Link>
+      {/* KPI Card Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {kpiCards.map((card, index) => (
+          <div
+            key={index}
+            className={`p-6 rounded-xl text-white shadow-xl transform transition-all hover:scale-[1.02] ${card.color}`}
+          >
+            <p className="text-lg font-medium opacity-90">{card.title}</p>
+            <p className="text-4xl font-extrabold mt-1">{card.value}</p>
+          </div>
         ))}
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-xl">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
-          Management Tools
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link
-            to="/admin/products"
-            className="p-4 bg-yellow-500 text-white rounded-lg text-lg font-medium hover:bg-yellow-600 transition text-center"
-          >
-            Manage Products
-          </Link>
-          <Link
-            to="/admin/orders"
-            className="p-4 bg-yellow-500 text-white rounded-lg text-lg font-medium hover:bg-yellow-600 transition text-center"
-          >
-            Manage Customer Orders
-          </Link>
-          {/* Add more management links here later (e.g., Users, Settings) */}
-        </div>
+      <h2 className="text-2xl font-semibold mt-12 mb-4 text-gray-800">
+        Quick Actions
+      </h2>
+
+      {/* Quick Action Buttons for Product Management */}
+      <div className="flex flex-wrap gap-4">
+        <Link
+          to="/admin/products"
+          className="bg-gray-700 text-white px-6 py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-150 font-medium"
+        >
+          Manage Products (List)
+        </Link>
+        <Link
+          to="/admin/add"
+          className="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 font-medium"
+        >
+          + Add New Product
+        </Link>
+        {/* Add more Quick Action links here as needed */}
       </div>
     </div>
   );

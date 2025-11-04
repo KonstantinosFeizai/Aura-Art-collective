@@ -75,22 +75,22 @@ const Header = () => {
                     Admin Panel
                   </Link>
                   {/* Simple dropdown menu for Admin links */}
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-100 rounded-md shadow-xl z-20 hidden group-hover:block border border-gray-200">
+                  <div class="absolute right-0  w-48 bg-gray-100 rounded-md shadow-xl z-20 hidden group-hover:block border border-gray-200">
                     <Link
                       to="/admin"
-                      className="block px-4 py-2 text-sm text-white hover:bg-gray-200"
+                      class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200"
                     >
                       Dashboard
                     </Link>
                     <Link
                       to="/admin/products"
-                      className="block px-4 py-2 text-sm text-white hover:bg-gray-200"
+                      class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200"
                     >
                       Manage Products
                     </Link>
                     <Link
                       to="/admin/orders"
-                      className="block px-4 py-2 text-sm text-white hover:bg-gray-200"
+                      class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200"
                     >
                       Manage Orders
                     </Link>

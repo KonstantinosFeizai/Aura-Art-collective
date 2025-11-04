@@ -4,6 +4,7 @@ const db = require("../models");
 const Order = db.Order;
 const Product = db.Product;
 const User = db.User;
+const { Op } = require("sequelize");
 const { sequelize } = db; // Import the sequelize instance for transaction management
 
 // 1. CREATE a new order from cart data (User Only)
@@ -154,10 +155,50 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
+exports.getKpiMetrics = async (req, res) => {
+  try {
+    // 1. Calculate Total Sales (Revenue)
+    const totalSalesResult = await Order.findOne({
+      attributes: [
+        [sequelize.fn("SUM", sequelize.col("totalAmount")), "totalSales"],
+      ],
+      raw: true,
+    });
+    const totalSales = parseFloat(totalSalesResult.totalSales || 0).toFixed(2);
+
+    // 2. Count Total Orders
+    const totalOrders = await Order.count();
+
+    // 3. Count Total Products
+    const totalProducts = await Product.count();
+
+    // 4. (Optional) Latest Order Date (To show freshness of data)
+    const latestOrder = await Order.findOne({
+      attributes: ["createdAt"],
+      order: [["createdAt", "DESC"]],
+      raw: true,
+    });
+
+    res.status(200).send({
+      totalSales,
+      totalOrders,
+      totalProducts,
+      latestOrderDate: latestOrder ? latestOrder.createdAt : null,
+    });
+  } catch (error) {
+    console.error("KPI Error:", error);
+    res.status(500).send({
+      message: "Error fetching KPI data.",
+      error: error.message,
+    });
+  }
+};
+
 // --- FINAL EXPORTS BLOCK ---
 module.exports = {
   createOrder: exports.createOrder,
   getUserOrders: exports.getUserOrders,
   getAllOrders: exports.getAllOrders, // <-- CRUCIAL FIX
   updateOrderStatus: exports.updateOrderStatus, // <-- CRUCIAL FIX
+  getKpiMetrics: exports.getKpiMetrics,
 };

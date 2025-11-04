@@ -110,7 +110,7 @@ const Footer = () => {
             </svg>
           </a>
           <a
-            href="#"
+            href="https://github.com/KonstantinosFeizai"
             className="hover:-translate-y-0.5 transition-all duration-300"
           >
             <svg
@@ -147,25 +147,25 @@ const Footer = () => {
             Home
           </a>
           <a
-            href="#"
+            href="/about"
             className="font-medium text-gray-500 hover:text-black transition-all"
           >
             About
           </a>
           <a
-            href="#"
+            href="/services"
             className="font-medium text-gray-500 hover:text-black transition-all"
           >
             Services
           </a>
           <a
-            href="#"
+            href="/contact"
             className="font-medium text-gray-500 hover:text-black transition-all"
           >
             Contact
           </a>
           <a
-            href="#"
+            href="/help"
             className="font-medium text-gray-500 hover:text-black transition-all"
           >
             Help
