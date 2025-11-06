@@ -23,6 +23,7 @@ import AboutPage from "./pages/AboutPage";
 import ServicesPage from "./pages/ServicesPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
+import AdminContactMessagesPage from "./pages/AdminContactMessagesPage";
 // We'll add more pages later (e.g., ProductDetail, Cart, Admin)
 
 function App() {
@@ -51,6 +52,11 @@ function App() {
             {/* Admin Protected Route */}
             <Route path="/admin" element={<AdminDashboardPage />} />{" "}
             {/* <-- Updated to use new Dashboard */}
+            <Route
+              path="/admin/messages"
+              element={<AdminContactMessagesPage />}
+            />
+            {/* --- ADMIN PRODUCT AND ORDER ROUTES --- */}
             <Route path="/admin/products" element={<AdminProductPage />} />
             <Route path="/admin/orders" element={<AdminOrderPage />} />
             <Route path="/admin/add" element={<ProductForm />} />

@@ -1,7 +1,9 @@
+// frontend-app/src/pages/AdminDashboardPage.jsx
+
 import React, { useState, useEffect } from "react";
 import AdminService from "../services/admin.service"; // Import the new service
 import { useAuth } from "../context/AuthContext"; // To get the user's token
-import { Link } from "react-router-dom"; // <--- NEW: Import Link for navigation
+import { Link } from "react-router-dom"; // Make sure Link is imported
 
 const AdminDashboardPage = () => {
   // Assume useAuth provides a currentUser object with an accessToken property
@@ -87,13 +89,13 @@ const AdminDashboardPage = () => {
         Quick Actions
       </h2>
 
-      {/* Quick Action Buttons for Product Management */}
+      {/* Quick Action Buttons */}
       <div className="flex flex-wrap gap-4">
         <Link
           to="/admin/products"
           className="bg-gray-700 text-white px-6 py-3 rounded-lg shadow-md hover:bg-gray-800 transition duration-150 font-medium"
         >
-          Manage Products (List)
+          Manage Products
         </Link>
         <Link
           to="/admin/add"
@@ -101,7 +103,13 @@ const AdminDashboardPage = () => {
         >
           + Add New Product
         </Link>
-        {/* Add more Quick Action links here as needed */}
+        {/* --- NEW BUTTON ADDED --- */}
+        <Link
+          to="/admin/messages"
+          className="bg-teal-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-teal-700 transition duration-150 font-medium"
+        >
+          View Messages
+        </Link>
       </div>
     </div>
   );

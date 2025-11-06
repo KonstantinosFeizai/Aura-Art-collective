@@ -1,49 +1,56 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import ProductService from "../services/product.service";
+import AdminService from "../services/admin.service";
+import { Link, useNavigate, Navigate } from "react-router-dom"; // 💡 Added Navigate
 import { useAuth } from "../context/AuthContext";
+import ProductService from "../services/product.service";
 
 const AdminProductPage = () => {
+  // Use the clean flags from the context
+  const { currentUser, isAuthenticated, isAdmin } = useAuth();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); // Access currentUser for token and isAdmin check
+
+  // 1. Initial Access Check & Redirect (Safe and clean way to check)
+  if (!isAuthenticated || !isAdmin) {
+    // If auth state hasn't loaded (isAuthenticated is false initially),
+    // we should wait, or if it has loaded and user is not admin, redirect.
+    // The AuthContext should handle the loading state, so we trust these flags.
+    return <Navigate to="/" replace />;
+  }
 
   // Function to fetch all products for the admin table
   const fetchProducts = async () => {
-    // Clear old state messages and reset loading state
     setMessage("");
     setError(null);
     setLoading(true);
 
     try {
-      const data = await ProductService.getAllProducts();
+      // We pass the token, which is safely available now due to the check above
+      const data = await ProductService.getAllProducts(currentUser.accessToken);
       setProducts(data);
     } catch (err) {
       setError(`Failed to fetch products: ${err.message}`);
-      setProducts([]); // Clear any old data
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Basic security check and redirection
-    if (!currentUser || !currentUser.roles.includes("admin")) {
-      navigate("/");
-      return;
+    // 2. Fetch data ONLY if we passed the initial security check
+    // We don't need the redundant .roles.includes() check here anymore.
+    if (isAuthenticated && isAdmin) {
+      fetchProducts();
     }
-
-    // Fetch products once authenticated
-    fetchProducts();
-  }, [currentUser, navigate]);
+    // Dependency array relies on isAuthenticated and isAdmin, which are clean flags
+  }, [isAuthenticated, isAdmin]);
 
   // Function to handle product deletion
   const handleDelete = async (productId) => {
-    // Using a simple window.confirm as a temporary placeholder.
-    // This MUST be replaced by a custom modal UI in production.
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
@@ -54,10 +61,8 @@ const AdminProductPage = () => {
     }
 
     try {
-      // Use the token for the Admin action
       await ProductService.deleteProduct(productId, currentUser.accessToken);
       setMessage("Product deleted successfully!");
-      // Refresh the list after deletion
       fetchProducts();
     } catch (err) {
       console.error("Deletion error:", err);
@@ -70,11 +75,15 @@ const AdminProductPage = () => {
 
   // --- Rendering Logic ---
 
-  // Check user role first
-  if (!currentUser || !currentUser.roles.includes("admin")) return null;
+  // Since the security check is handled by the immediate 'if' block at the top
+  // and the redirect is fired, we can remove the second redundant check here:
 
   if (loading)
-    return <div className="text-center py-10">Loading Products...</div>;
+    return (
+      <div className="text-center py-10 text-indigo-600 font-semibold text-xl">
+        Loading Products...
+      </div>
+    );
 
   if (error) {
     return <div className="text-red-600 text-center py-4">{error}</div>;
@@ -82,13 +91,17 @@ const AdminProductPage = () => {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-7xl">
-      <h1 className="text-4xl font-bold text-gray-800 mb-6">
+      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
         Admin Product Management
       </h1>
 
       {message && (
         <div
-          className={`p-3 rounded mb-4 ${
+          // 💡 The crash used to happen here in your original file (Line 74).
+          // The fix is ensuring 'message' is always a string (which it is via useState("")).
+          // Relying on the clean auth logic above prevents it from rendering
+          // before message is initialized.
+          className={`p-3 rounded mb-4 shadow-sm ${
             message.includes("successfully")
               ? "bg-green-100 text-green-700"
               : "bg-red-100 text-red-700"
@@ -131,11 +144,11 @@ const AdminProductPage = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
-              <tr key={product.id}>
+              <tr key={product.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {product.id}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
                   {product.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">

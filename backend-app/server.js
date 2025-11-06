@@ -21,23 +21,38 @@ const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
 const orderRoutes = require("./routes/order.routes");
 const adminRoutes = require("./routes/admin.routes");
+const contactRoutes = require("./routes/contact.routes");
+const adminContactRoutes = require("./routes/admin.contact.routes");
 
+// --- Mount Routes ---
+
+// 1. Specific Admin Routes (Must be first to be found before the general /api/admin)
+app.use("/api/admin/contact", adminContactRoutes); // <-- Moved up!
+
+// 2. General Admin Routes
 app.use("/api/admin", adminRoutes);
+
+// 3. Other Public/Standard Routes
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 
+// 4. Public Contact Route (Must be here to handle the POST)
+app.use("/api/contact", contactRoutes);
+
 // --- Start Server Function ---
 async function startServer() {
   try {
-    // 1. Authenticate (Test) the connection (already done in models/index.js now, but good to keep)
+    // 1. Authenticate (Test) the connection
     await db.sequelize.authenticate();
     console.log("✅ Database connection has been established successfully.");
 
-    // 2. Start the Express server
-    const PORT = process.env.PORT || 3001;
+    // 2. Synchronize models with the database
+    // This will create/update tables (including ContactMessages)
+    await db.sequelize.sync({ alter: true });
+    console.log("✅ All models synchronized with database. Tables are ready."); // 3. Start the Express server
 
-    // Ensure models are synced before starting server (handled in models/index.js)
+    const PORT = process.env.PORT || 3001;
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
