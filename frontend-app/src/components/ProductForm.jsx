@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProductService from "../services/product.service";
 
-const ProductForm = ({ mode }) => {
-  // mode is either 'add' or 'edit'
+const ProductForm = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get product ID from URL if in 'edit' mode
+  const { id } = useParams();
+  const isEditMode = !!id;
 
   const [error, setError] = useState(null);
   const [product, setProduct] = useState({
@@ -15,15 +15,16 @@ const ProductForm = ({ mode }) => {
     description: "",
     price: 0,
     category: "",
-    imageUrl: "",
+    imageUrl: "", // Existing URL input
     inStock: 0,
     isFeatured: false,
   });
+  // 💡 NEW STATE: To hold the selected file object
+  const [imageFile, setImageFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const isEditMode = mode === "edit";
 
-  // --- Fetch Product Data for Editing ---
+  // --- Fetch Product Data for Editing (No change needed here) ---
   useEffect(() => {
     if (isEditMode) {
       const fetchProduct = async () => {
@@ -31,16 +32,24 @@ const ProductForm = ({ mode }) => {
         setError(null);
         try {
           const data = await ProductService.getProduct(id);
+
           if (!data) {
             throw new Error("Product not found");
           }
+
           setProduct({
-            ...data,
-            price: parseFloat(data.price),
-            inStock: parseInt(data.inStock),
+            name: data.name ?? "",
+            description: data.description ?? "",
+            price: parseFloat(data.price || 0),
+            category: data.category ?? "",
+            imageUrl: data.imageUrl ?? "",
+            inStock: parseInt(data.inStock || 0),
+            isFeatured: data.isFeatured ?? false,
           });
         } catch (err) {
-          setError(err.message || "Failed to load product data");
+          const errorMsg =
+            err.response?.data?.message || "Failed to load product data";
+          setError(errorMsg);
           setProduct({
             name: "",
             description: "",
@@ -56,50 +65,102 @@ const ProductForm = ({ mode }) => {
       };
       fetchProduct();
     }
-  }, [isEditMode, id]);
+  }, [id, isEditMode]);
 
   // --- Handle Input Changes ---
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
+
+    // 💡 NEW LOGIC: Handle file input separately
+    if (type === "file") {
+      setImageFile(files[0]);
+      // Clear the existing imageUrl if a new file is selected, to avoid conflict
+      setProduct((prev) => ({ ...prev, imageUrl: "" }));
+      return;
+    }
+
     setProduct((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  // --- Handle Form Submission ---
+  // --- Handle Form Submission (Crucially modified for FormData) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
+    // 1. Create a FormData object to handle both text and file data
+    const formData = new FormData();
+
+    // 2. Append all product text fields
+    for (const key in product) {
+      if (key !== "imageUrl" && key !== "imageFile") {
+        // Ensure numeric types are sent correctly
+        let value = product[key];
+        if (key === "price") value = parseFloat(value);
+        if (key === "inStock") value = parseInt(value);
+
+        formData.append(key, value);
+      }
+    }
+    // Also append the existing imageUrl if no new file is uploaded (for edit mode)
+    if (product.imageUrl && !imageFile) {
+      formData.append("imageUrl", product.imageUrl);
+    }
+
+    // 3. Append the file if one was selected
+    if (imageFile) {
+      formData.append("image", imageFile, imageFile.name);
+      // The key 'image' must match what your backend (e.g., Multer) expects!
+    }
+
     try {
       if (isEditMode) {
-        await ProductService.updateProduct(id, product);
+        // UPDATE: Send FormData object
+        await ProductService.updateProduct(id, formData, true); // Pass true flag for file upload
         setMessage("Product updated successfully!");
       } else {
-        await ProductService.createProduct(product);
+        // CREATE: Send FormData object
+        await ProductService.createProduct(formData, true); // Pass true flag for file upload
         setMessage("Product created successfully!");
       }
 
-      setTimeout(() => navigate("/admin"), 1500);
+      setTimeout(() => navigate("/admin/products"), 1500);
     } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message;
       setError(
-        err.message || `Failed to ${isEditMode ? "update" : "create"} product`
+        errorMessage || `Failed to ${isEditMode ? "update" : "create"} product`
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // --- Conditional Rendering (omitted for brevity, remains the same) ---
   if (isEditMode && loading) {
-    return <div className="text-center py-10">Loading Product to Edit...</div>;
+    return (
+      <div className="text-center py-10 text-xl font-semibold text-gray-600">
+        Loading Product to Edit...
+      </div>
+    );
+  }
+
+  if (isEditMode && error) {
+    return (
+      <div className="text-center py-10 text-xl font-semibold text-red-700">
+        Error: {error}
+      </div>
+    );
   }
 
   return (
     <div className="max-w-4xl mx-auto my-10 p-8 bg-white shadow-2xl rounded-lg">
       <h1 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">
-        {isEditMode ? `Edit Product: ${product.name}` : "Add New Product"}
+        {isEditMode
+          ? `Edit Product: ${product.name || "(Loading Name...)"}`
+          : "Add New Product"}
       </h1>
 
       {error && (
@@ -119,8 +180,9 @@ const ProductForm = ({ mode }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Name and Category */}
+        {/* ... (Name, Category, Price, Stock fields remain the same) ... */}
         <div className="grid grid-cols-2 gap-6">
+          {/* Name Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">Name</label>
             <input
@@ -132,6 +194,7 @@ const ProductForm = ({ mode }) => {
               className="w-full border border-gray-300 p-2 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
             />
           </div>
+          {/* Category Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Category
@@ -149,6 +212,7 @@ const ProductForm = ({ mode }) => {
 
         {/* Price and Stock */}
         <div className="grid grid-cols-2 gap-6">
+          {/* Price Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Price ($)
@@ -164,6 +228,7 @@ const ProductForm = ({ mode }) => {
               className="w-full border border-gray-300 p-2 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
             />
           </div>
+          {/* Stock Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               In Stock
@@ -181,18 +246,55 @@ const ProductForm = ({ mode }) => {
           </div>
         </div>
 
-        {/* Image URL (The key to fixing your image issue!) */}
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Image URL (Public Link)
-          </label>
-          <input
-            type="url"
-            name="imageUrl"
-            value={product.imageUrl}
-            onChange={handleChange}
-            className="w-full border border-gray-300 p-2 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
-          />
+        {/* 💡 FILE UPLOAD SECTION */}
+        <div className="border border-dashed border-gray-400 p-4 rounded-lg bg-gray-50 space-y-3">
+          <p className="text-gray-700 font-semibold text-sm">
+            Product Image Source (Choose one):
+          </p>
+
+          {/* Option A: File Upload Input */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Upload Image from PC
+            </label>
+            <input
+              type="file"
+              name="imageFile"
+              onChange={handleChange}
+              accept="image/*"
+              className="w-full border border-gray-300 p-2 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+            />
+            {imageFile && (
+              <p className="text-xs text-green-600 mt-1">
+                File selected: **{imageFile.name}**
+              </p>
+            )}
+          </div>
+
+          <div className="text-center text-gray-500 text-sm">OR</div>
+
+          {/* Option B: Image URL Input */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Image URL (Public Link)
+            </label>
+            <input
+              type="url"
+              name="imageUrl"
+              value={product.imageUrl}
+              onChange={handleChange}
+              disabled={!!imageFile} // Disable if a file is selected
+              placeholder="Enter a public image link..."
+              className={`w-full border p-2 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 ${
+                !!imageFile
+                  ? "bg-gray-200 cursor-not-allowed"
+                  : "border-gray-300"
+              }`}
+            />
+            {product.imageUrl && (
+              <p className="text-xs text-blue-600 mt-1">Current URL set.</p>
+            )}
+          </div>
         </div>
 
         {/* Description */}
@@ -210,7 +312,7 @@ const ProductForm = ({ mode }) => {
           ></textarea>
         </div>
 
-        {/* Checkbox */}
+        {/* Checkbox and Submit Button (remain the same) */}
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -224,11 +326,10 @@ const ProductForm = ({ mode }) => {
           </label>
         </div>
 
-        {/* Submit Button */}
         <div className="flex justify-end space-x-4">
           <button
             type="button"
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/admin/products")}
             className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400"
           >
             Cancel

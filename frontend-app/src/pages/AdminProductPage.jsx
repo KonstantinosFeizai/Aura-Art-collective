@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AdminService from "../services/admin.service";
-import { Link, useNavigate, Navigate } from "react-router-dom"; // 💡 Added Navigate
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ProductService from "../services/product.service";
 
 const AdminProductPage = () => {
-  // Use the clean flags from the context
+  // Auth + basic hooks (must run every render)
   const { currentUser, isAuthenticated, isAdmin } = useAuth();
-
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // 1. Initial Access Check & Redirect (Safe and clean way to check)
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+  const totalItems = products.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+
+  // Early redirect after hooks
   if (!isAuthenticated || !isAdmin) {
-    // If auth state hasn't loaded (isAuthenticated is false initially),
-    // we should wait, or if it has loaded and user is not admin, redirect.
-    // The AuthContext should handle the loading state, so we trust these flags.
     return <Navigate to="/" replace />;
   }
 
-  // Function to fetch all products for the admin table
+  // Fetch products (client-side pagination)
   const fetchProducts = async () => {
     setMessage("");
     setError(null);
     setLoading(true);
-
     try {
-      // We pass the token, which is safely available now due to the check above
-      const data = await ProductService.getAllProducts(currentUser.accessToken);
-      setProducts(data);
+      const data = await ProductService.getAllProducts(
+        currentUser?.accessToken
+      );
+      setProducts(data || []);
     } catch (err) {
-      setError(`Failed to fetch products: ${err.message}`);
+      setError(`Failed to fetch products: ${err?.message || err}`);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -41,19 +43,32 @@ const AdminProductPage = () => {
   };
 
   useEffect(() => {
-    // 2. Fetch data ONLY if we passed the initial security check
-    // We don't need the redundant .roles.includes() check here anymore.
     if (isAuthenticated && isAdmin) {
       fetchProducts();
     }
-    // Dependency array relies on isAuthenticated and isAdmin, which are clean flags
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isAdmin]);
 
-  // Function to handle product deletion
+  // Adjust current page when totalPages changes
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+    if (currentPage < 1) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const currentProducts = useMemo(() => {
+    const start = (currentPage - 1) * perPage;
+    return products.slice(start, start + perPage);
+  }, [products, currentPage, perPage]);
+
+  const goToPage = (p) => {
+    const page = Math.max(1, Math.min(totalPages, p));
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleDelete = async (productId) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) {
+    if (!window.confirm("Are you sure you want to delete this product?"))
       return;
-    }
 
     if (!currentUser || !currentUser.accessToken) {
       setMessage("Authentication failed. Cannot delete.");
@@ -67,16 +82,11 @@ const AdminProductPage = () => {
     } catch (err) {
       console.error("Deletion error:", err);
       setMessage(
-        err.response?.data?.message ||
+        err?.response?.data?.message ||
           "Failed to delete product. Check server logs."
       );
     }
   };
-
-  // --- Rendering Logic ---
-
-  // Since the security check is handled by the immediate 'if' block at the top
-  // and the redirect is fired, we can remove the second redundant check here:
 
   if (loading)
     return (
@@ -90,17 +100,25 @@ const AdminProductPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-7xl">
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
-        Admin Product Management
-      </h1>
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">
+          Admin Product Management
+        </h1>
+
+        {/* Add button: full width on mobile, right aligned on md+ */}
+        <div className="w-full md:w-auto flex md:inline-flex justify-start md:justify-end">
+          <Link
+            to="/admin/add"
+            className="w-full md:w-auto bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-150 font-medium shadow-md text-center"
+          >
+            + Add New Product
+          </Link>
+        </div>
+      </div>
 
       {message && (
         <div
-          // 💡 The crash used to happen here in your original file (Line 74).
-          // The fix is ensuring 'message' is always a string (which it is via useState("")).
-          // Relying on the clean auth logic above prevents it from rendering
-          // before message is initialized.
           className={`p-3 rounded mb-4 shadow-sm ${
             message.includes("successfully")
               ? "bg-green-100 text-green-700"
@@ -111,70 +129,251 @@ const AdminProductPage = () => {
         </div>
       )}
 
-      <div className="flex justify-end mb-6">
-        <Link
-          to="/admin/add"
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-150 font-medium shadow-md"
-        >
-          + Add New Product
-        </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+        <div className="text-sm text-gray-600">
+          Showing{" "}
+          {totalItems === 0
+            ? "0"
+            : `${(currentPage - 1) * perPage + 1}–${
+                (currentPage - 1) * perPage + currentProducts.length
+              }`}{" "}
+          of {totalItems}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-gray-600">Per page</label>
+          <select
+            value={perPage}
+            onChange={(e) => {
+              setPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value={4}>4</option>
+            <option value={8}>8</option>
+            <option value={12}>12</option>
+            <option value={16}>16</option>
+          </select>
+        </div>
       </div>
 
-      {/* Product Table */}
-      <div className="overflow-x-auto bg-white shadow-xl rounded-lg border border-gray-100">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                In Stock
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {product.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
-                  {product.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  ${parseFloat(product.price).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {product.inStock}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+      {/* Mobile / Tablet card layout */}
+      <div className="space-y-4 sm:hidden">
+        {currentProducts.map((product) => (
+          <div
+            key={product.id}
+            className="bg-white rounded-lg shadow-md p-4 border border-gray-100"
+          >
+            <div className="flex gap-4">
+              <div className="w-24 h-24 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                    No Image
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3
+                      className="text-sm font-semibold text-gray-900 truncate"
+                      title={product.name}
+                    >
+                      {product.name}
+                    </h3>
+                    <div className="text-xs text-gray-500 mt-1 truncate">
+                      {product.category}
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold text-yellow-600 whitespace-nowrap">
+                    ${(parseFloat(product.price) || 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
                   <Link
                     to={`/admin/edit/${product.id}`}
-                    className="text-indigo-600 hover:text-indigo-800 transition duration-150 mr-4 font-semibold"
+                    className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 transition-colors font-medium"
                   >
                     Edit
                   </Link>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="text-red-600 hover:text-red-800 transition duration-150 font-semibold"
+                    className="inline-block px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors font-medium"
+                  >
+                    Delete
+                  </button>
+                  <div className="ml-auto text-xs text-gray-500">
+                    Stock: {product.inStock}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop / Tablet table */}
+      <div className="hidden sm:block overflow-x-auto bg-white shadow-xl rounded-lg border border-gray-100">
+        <table className="min-w-full divide-y divide-gray-200 table-auto">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
+                ID
+              </th>
+
+              {/* New Image column visible on tablet+ */}
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell min-w-[80px]">
+                Image
+              </th>
+
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[220px]">
+                Name
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                In Stock
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[160px]">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {currentProducts.map((product) => (
+              <tr key={product.id} className="hover:bg-gray-50">
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {product.id}
+                </td>
+
+                {/* Image cell for tablet+ (hidden on xs) */}
+                <td className="px-4 py-4 hidden sm:table-cell">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-md border border-gray-100"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 flex items-center justify-center text-xs text-gray-500 rounded-md border border-gray-100">
+                      No Image
+                    </div>
+                  )}
+                </td>
+
+                <td className="px-4 py-4 text-sm text-gray-700 font-semibold max-w-[300px] min-w-0">
+                  <div className="truncate" title={product.name}>
+                    {product.name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {product.category}
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                  ${(parseFloat(product.price) || 0).toFixed(2)}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                  {product.inStock}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <Link
+                    to={`/admin/edit/${product.id}`}
+                    className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 transition-colors font-medium mr-4"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="inline-block px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors font-medium"
                   >
                     Delete
                   </button>
                 </td>
               </tr>
             ))}
+            {currentProducts.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  No products found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination controls */}
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between bg-gray-50 px-4 py-3 rounded-lg gap-3">
+        <div className="text-sm text-gray-600">
+          Page {currentPage} of {totalPages}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => goToPage(1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            « First
+          </button>
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            ‹ Prev
+          </button>
+
+          {/* Numeric pages (up to 5) */}
+          <div className="flex items-center gap-1 px-2">
+            {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+              const half = Math.floor(Math.min(totalPages, 5) / 2);
+              let start = Math.max(
+                1,
+                Math.min(totalPages - 4, currentPage - half)
+              );
+              const pageNum = start + i;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => goToPage(pageNum)}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    pageNum === currentPage
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white border border-gray-200 text-gray-700"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Next ›
+          </button>
+          <button
+            onClick={() => goToPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Last »
+          </button>
+        </div>
       </div>
     </div>
   );

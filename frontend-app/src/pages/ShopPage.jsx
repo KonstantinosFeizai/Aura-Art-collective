@@ -74,14 +74,14 @@ const ShopPage = () => {
   }
 
   return (
-    <div className="py-10">
-      <h1 className="text-4xl font-bold text-gray-800 mb-6 border-b pb-4">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 sm:mb-6 border-b pb-4">
         Art Collection
       </h1>
 
-      {/* Controls */}
+      {/* Controls - Responsive flex layout */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm sm:text-base text-gray-600">
           Showing{" "}
           {currentProducts.length > 0
             ? `${(currentPage - 1) * perPage + 1}–${
@@ -91,15 +91,15 @@ const ShopPage = () => {
           of {totalItems}
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600">Per page</label>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <label className="text-sm sm:text-base text-gray-600">Per page</label>
           <select
             value={perPage}
             onChange={(e) => {
               setPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="border rounded px-2 py-1 text-sm"
+            className="border rounded px-2 py-1 text-sm sm:text-base"
           >
             <option value={4}>4</option>
             <option value={8}>8</option>
@@ -109,38 +109,43 @@ const ShopPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      {/* Product Grid - Responsive columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         {currentProducts.map((product) => (
           <div
             key={product.id}
             className="bg-white rounded-lg shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:-translate-y-1"
           >
-            <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-500">
+            <div className="relative pt-[75%] bg-gray-200">
+              {" "}
+              {/* 4:3 aspect ratio */}
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-sm">Image Placeholder</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+                  Image Placeholder
+                </span>
               )}
             </div>
 
             <div className="p-4">
-              <h2 className="text-xl font-semibold text-gray-800 truncate">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800 truncate">
                 {product.name}
               </h2>
               <p className="text-sm text-gray-500 mt-1">{product.category}</p>
 
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-2xl font-bold text-yellow-600">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mt-3">
+                <span className="text-xl sm:text-2xl font-bold text-yellow-600">
                   ${parseFloat(product.price || 0).toFixed(2)}
                 </span>
 
                 <Link
                   to={`/product/${product.id}`}
-                  className="bg-gray-800 text-white px-3 py-1 text-sm rounded hover:bg-gray-700 transition duration-150"
+                  className="w-full sm:w-auto bg-gray-800 text-white px-4 py-2 text-sm rounded-md hover:bg-gray-700 transition duration-150 text-center"
                 >
                   View Details
                 </Link>
@@ -150,41 +155,41 @@ const ShopPage = () => {
         ))}
       </div>
 
-      {/* Pagination */}
-      <div className="mt-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* Pagination - Responsive spacing and text */}
+      <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
+        <div className="flex items-center gap-2 order-2 sm:order-1">
           <button
             onClick={() => goToPage(1)}
             disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-2 sm:px-3 py-1 border rounded-md disabled:opacity-50 text-sm sm:text-base hover:bg-gray-50"
           >
             « First
           </button>
           <button
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-2 sm:px-3 py-1 border rounded-md disabled:opacity-50 text-sm sm:text-base hover:bg-gray-50"
           >
             ‹ Prev
           </button>
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-sm sm:text-base text-gray-600 order-1 sm:order-2">
           Page {currentPage} of {totalPages}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 order-3">
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-2 sm:px-3 py-1 border rounded-md disabled:opacity-50 text-sm sm:text-base hover:bg-gray-50"
           >
             Next ›
           </button>
           <button
             onClick={() => goToPage(totalPages)}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-2 sm:px-3 py-1 border rounded-md disabled:opacity-50 text-sm sm:text-base hover:bg-gray-50"
           >
             Last »
           </button>

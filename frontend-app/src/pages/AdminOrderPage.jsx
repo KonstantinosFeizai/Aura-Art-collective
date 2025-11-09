@@ -107,91 +107,156 @@ const AdminOrderPage = () => {
     );
 
   return (
-    <div className="py-10 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8 border-b pb-4">
+    <div className="py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-6 sm:mb-8 border-b pb-4">
         📋 All Customer Orders ({orders.length})
       </h1>
 
       {orders.length === 0 ? (
-        <div className="text-center p-10 bg-gray-50 rounded-lg shadow">
-          <p className="text-xl text-gray-600">
+        <div className="text-center p-6 sm:p-10 bg-gray-50 rounded-lg shadow">
+          <p className="text-lg sm:text-xl text-gray-600">
             No orders have been placed yet.
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto shadow-md sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ship To
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                    {order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.userId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <>
+          {/* Mobile view - Card layout */}
+          <div className="space-y-4 sm:hidden">
+            {orders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-white rounded-lg shadow-md p-4 border border-gray-200"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="text-sm font-bold text-gray-900">
+                      Order #{order.id}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Customer ID: {order.userId}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
                     {formatOrderDate(order.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-yellow-600">
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <div className="text-base font-semibold text-yellow-600">
                     ${parseFloat(order.totalAmount).toFixed(2)}
-                  </td>
+                  </div>
+                </div>
 
-                  {/* --- Status Dropdown for Editing --- */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        handleStatusChange(order.id, e.target.value)
-                      }
-                      className={`block w-full py-1 px-2 border rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 text-sm ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {allowedStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+                <div className="mb-3">
+                  <select
+                    value={order.status}
+                    onChange={(e) =>
+                      handleStatusChange(order.id, e.target.value)
+                    }
+                    className={`block w-full py-1.5 px-2 border rounded-md text-sm ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    {allowedStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  <td className="px-6 py-4 whitespace-pre-line text-sm text-gray-500 max-w-xs overflow-hidden truncate">
-                    {order.shippingAddress}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.paymentMethod}
-                  </td>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Ship To:</span>
+                    <p className="text-gray-600 whitespace-pre-line text-sm mt-1">
+                      {order.shippingAddress}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Payment:</span>
+                    <span className="ml-2 text-gray-600">
+                      {order.paymentMethod}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet/Desktop view - Table layout */}
+          <div className="hidden sm:block overflow-x-auto shadow-md rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer ID
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ship To
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                      {order.id}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.userId}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatOrderDate(order.createdAt)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-semibold text-yellow-600">
+                      ${parseFloat(order.totalAmount).toFixed(2)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={order.status}
+                        onChange={(e) =>
+                          handleStatusChange(order.id, e.target.value)
+                        }
+                        className={`block w-full py-1 px-2 border rounded-md text-sm ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {allowedStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 max-w-[200px]">
+                      <div className="truncate" title={order.shippingAddress}>
+                        {order.shippingAddress}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.paymentMethod}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

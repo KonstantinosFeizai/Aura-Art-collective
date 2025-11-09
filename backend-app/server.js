@@ -1,11 +1,10 @@
-// backend-app/server.js
-
 // Load environment variables from .env file (must be first!)
 require("dotenv").config();
 
 // Core dependencies
 const express = require("express");
 const cors = require("cors");
+const path = require("path"); // 💡 REQUIRED: To handle file paths
 
 // Database initialization (Sequelize connection and model syncing)
 const db = require("./models");
@@ -14,7 +13,17 @@ const app = express();
 
 // --- Middleware Setup ---
 app.use(cors());
+
+// 1. Parse JSON bodies (for standard API calls)
 app.use(express.json());
+
+// 2. Parse URL-encoded bodies with extended option (REQUIRED for Multer/FormData text fields)
+// 💡 NEW LINE: Multer requires this to parse non-file fields from FormData
+app.use(express.urlencoded({ extended: true }));
+
+// 3. Serve Static Files (REQUIRED: To make uploaded images publicly accessible)
+// 💡 NEW LINE: Creates the public URL route /uploads to serve files from the server's uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --- Routes Setup ---
 const authRoutes = require("./routes/auth.routes");
@@ -27,7 +36,7 @@ const adminContactRoutes = require("./routes/admin.contact.routes");
 // --- Mount Routes ---
 
 // 1. Specific Admin Routes (Must be first to be found before the general /api/admin)
-app.use("/api/admin/contact", adminContactRoutes); // <-- Moved up!
+app.use("/api/admin/contact", adminContactRoutes);
 
 // 2. General Admin Routes
 app.use("/api/admin", adminRoutes);
@@ -48,9 +57,8 @@ async function startServer() {
     console.log("✅ Database connection has been established successfully.");
 
     // 2. Synchronize models with the database
-    // This will create/update tables (including ContactMessages)
     await db.sequelize.sync({ alter: true });
-    console.log("✅ All models synchronized with database. Tables are ready."); // 3. Start the Express server
+    console.log("✅ All models synchronized with database. Tables are ready.");
 
     const PORT = process.env.PORT || 3001;
 
