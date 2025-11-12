@@ -1,11 +1,21 @@
 // backend-app/models/User.js
 
 const { DataTypes } = require("sequelize");
+/**
+ * Defines the User model for Sequelize.
+ * This model stores user account credentials and profile information.
+ * Note: Password should be hashed before saving to the database.
+ *
+ * @param {object} sequelize - The Sequelize connection instance.
+ * @param {object} DataTypes - Object containing Sequelize data types.
+ * @returns {object} The Sequelize User Model.
+ */
 
 module.exports = (sequelize) => {
   const User = sequelize.define(
     "User",
     {
+      // Primary Key: Unique identifier for the user
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

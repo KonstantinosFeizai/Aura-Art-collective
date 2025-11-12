@@ -1,28 +1,39 @@
-// Load environment variables from .env file (must be first!)
+/** backend-app/server.js
+ * @fileoverview server.js
+ * The main entry point for the Aura Art Collective API.
+ * Sets up Express, middleware, database connection (Sequelize), and defines all API routes.
+ */
+
+// Load environment variables from .env file
 require("dotenv").config();
 
 // Core dependencies
 const express = require("express");
 const cors = require("cors");
-const path = require("path"); // 💡 REQUIRED: To handle file paths
+const path = require("path"); // 💡 REQUIRED: To handle file paths for static assets
 
 // Database initialization (Sequelize connection and model syncing)
 const db = require("./models");
 
 const app = express();
 
+// =======================================================
 // --- Middleware Setup ---
+// =======================================================
+
+// Enable Cross-Origin Resource Sharing for the front end
 app.use(cors());
 
 // 1. Parse JSON bodies (for standard API calls)
 app.use(express.json());
 
 // 2. Parse URL-encoded bodies with extended option (REQUIRED for Multer/FormData text fields)
-// 💡 NEW LINE: Multer requires this to parse non-file fields from FormData
+// This must be set to true to correctly parse complex objects from form data submissions.
 app.use(express.urlencoded({ extended: true }));
 
 // 3. Serve Static Files (REQUIRED: To make uploaded images publicly accessible)
-// 💡 NEW LINE: Creates the public URL route /uploads to serve files from the server's uploads directory
+// Creates the public URL route /uploads to serve files from the server's uploads directory.
+// Users can access images via http://localhost:PORT/uploads/filename.jpg
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --- Routes Setup ---

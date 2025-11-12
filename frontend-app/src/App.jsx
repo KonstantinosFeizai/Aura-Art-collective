@@ -1,10 +1,15 @@
-// frontend-app/src/App.jsx
+/** frontend-app/src/App.jsx
+ * @fileoverview App.jsx
+ * @description The main component of the application, responsible for setting up
+ * the global layout structure (Header, Footer, Main Content) and defining all
+ * application routes using react-router-dom.
+ */
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Import Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
-// Import new Admin Components
 import ProductForm from "./components/ProductForm";
 
 // Import Pages
@@ -24,7 +29,6 @@ import ServicesPage from "./pages/ServicesPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
 import AdminContactMessagesPage from "./pages/AdminContactMessagesPage";
-// We'll add more pages later (e.g., ProductDetail, Cart, Admin)
 
 function App() {
   return (
@@ -35,34 +39,46 @@ function App() {
         {/* Main Content Area */}
         <main className="flex-grow container mx-auto p-4">
           <Routes>
-            {/* Public Routes */}
+            {/* ------------------------------------------------- */}
+            {/* PUBLIC & CORE E-COMMERCE ROUTES                   */}
+            {/* ------------------------------------------------- */}
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            {/* ------------------------------------------------- */}
+            {/* AUTHENTICATION & USER ROUTES                      */}
+            {/* ------------------------------------------------- */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/orders" element={<OrderHistoryPage />} />
+            {/* ------------------------------------------------- */}
+            {/* CART & CHECKOUT ROUTES                            */}
+            {/* ------------------------------------------------- */}
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            {/* ------------------------------------------------- */}
+            {/* INFORMATIONAL ROUTES                              */}
+            {/* ------------------------------------------------- */}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/help" element={<HelpPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            {/* --- CART AND CHECKOUT ROUTES --- */}
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            {/* --- PRODUCT DETAIL ROUTE --- */}
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            {/* Admin Protected Route */}
-            <Route path="/admin" element={<AdminDashboardPage />} />{" "}
-            {/* <-- Updated to use new Dashboard */}
+            {/* ------------------------------------------------- */}
+            {/* ADMIN ROUTES (Usually protected)                  */}
+            {/* ------------------------------------------------- */}
+            {/* Dashboard and main admin entry point */}
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            {/* Product Management */}
+            <Route path="/admin/products" element={<AdminProductPage />} />
+            <Route path="/admin/add" element={<ProductForm />} />
+            <Route path="/admin/edit/:id" element={<ProductForm />} />{" "}
+            {/* Edit existing product */}
+            {/* Order and Communication Management */}
+            <Route path="/admin/orders" element={<AdminOrderPage />} />
             <Route
               path="/admin/messages"
               element={<AdminContactMessagesPage />}
             />
-            {/* --- ADMIN PRODUCT AND ORDER ROUTES --- */}
-            <Route path="/admin/products" element={<AdminProductPage />} />
-            <Route path="/admin/orders" element={<AdminOrderPage />} />
-            <Route path="/admin/add" element={<ProductForm />} />
-            <Route path="/admin/edit/:id" element={<ProductForm />} />
-            {/* --- ORDER HISTORY ROUTE --- */}
-            <Route path="/orders" element={<OrderHistoryPage />} />
           </Routes>
         </main>
 

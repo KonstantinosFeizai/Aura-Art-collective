@@ -110,6 +110,12 @@ const AdminDashboardPage = () => {
         >
           View Messages
         </Link>
+        <Link
+          to="/admin/orders"
+          className="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-teal-700 transition duration-150 font-medium"
+        >
+          Manage Orders
+        </Link>
       </div>
     </div>
   );

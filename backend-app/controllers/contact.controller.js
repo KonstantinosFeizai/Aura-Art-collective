@@ -1,5 +1,5 @@
-/**
- * //backend-app/controllers/contact.controller.js
+/** //backend-app/controllers/contact.controller.js
+ * Contact Controller
  *
  * Responsible for creating, listing (paginated) and deleting contact messages.
  * Functions in this controller are intended to be used by route handlers.

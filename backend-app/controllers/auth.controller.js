@@ -5,43 +5,33 @@ const User = db.User;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-/**
- * User Registration Controller
- *
- * @param {Object} req - Express request object
- * @param {Object} req.body - Request body containing user registration data
- * @param {string} req.body.username - User's chosen username
- * @param {string} req.body.email - User's email address
- * @param {string} req.body.password - User's password (plain text)
- * @param {Object} res - Express response object
- * @returns {Object} Registration status and user data (excluding password)
- */
+// --- User Registration Logic ---
 exports.register = async (req, res) => {
   try {
-    // Validate if user exists in database
+    // 1. Check if user already exists (by email or username)
     const existingUser = await User.findOne({
       where: { email: req.body.email },
     });
 
     if (existingUser) {
-      return res.status(409).send({
-        message: "User with this email already exists.",
-      });
+      return res
+        .status(409)
+        .send({ message: "User with this email already exists." });
     }
 
-    // Generate salt and hash password for security
+    // 2. Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
-    // Create new user record with hashed password
+    // 3. Create the new user in the database
     const newUser = await User.create({
       username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
-      role: "standard", // Default role for new users
+      // role defaults to 'standard'
     });
 
-    // Return success response with safe user data
+    // 4. Respond with success (do NOT send the password)
     res.status(201).send({
       message: "User registered successfully!",
       user: {
@@ -53,36 +43,23 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error("Registration Error:", error);
-    res.status(500).send({
-      message: "Error during registration. Please try again.",
-    });
+    res.status(500).send({ message: "Error during registration." });
   }
 };
 
-/**
- * User Login Controller
- *
- * @param {Object} req - Express request object
- * @param {Object} req.body - Request body containing login credentials
- * @param {string} req.body.email - User's email address
- * @param {string} req.body.password - User's password (plain text)
- * @param {Object} res - Express response object
- * @returns {Object} Login status, user data, and JWT token
- */
+// --- User Login Logic ---
 exports.login = async (req, res) => {
   try {
-    // Find user by email in database
+    // 1. Find user by email
     const user = await User.findOne({
       where: { email: req.body.email },
     });
 
     if (!user) {
-      return res.status(404).send({
-        message: "User not found. Please check your email.",
-      });
+      return res.status(404).send({ message: "User not found." });
     }
 
-    // Verify password against stored hash
+    // 2. Compare the submitted password with the hashed password
     const passwordIsValid = await bcrypt.compare(
       req.body.password,
       user.password
@@ -91,18 +68,20 @@ exports.login = async (req, res) => {
     if (!passwordIsValid) {
       return res.status(401).send({
         accessToken: null,
-        message: "Invalid password. Please try again.",
+        message: "Invalid Password!",
       });
     }
 
-    // Generate JWT token with user data
+    // 3. Create a JSON Web Token (JWT)
     const token = jwt.sign(
       { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: 86400 } // Token expires in 24 hours
+      process.env.JWT_SECRET, // Using the secret key from your .env file
+      {
+        expiresIn: 86400, // 24 hours
+      }
     );
 
-    // Return success response with token and safe user data
+    // 4. Respond with the token and user data
     res.status(200).send({
       id: user.id,
       username: user.username,
@@ -112,8 +91,6 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).send({
-      message: "Error during login. Please try again later.",
-    });
+    res.status(500).send({ message: "Error during login." });
   }
 };
