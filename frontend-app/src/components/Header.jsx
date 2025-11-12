@@ -1,6 +1,6 @@
+// frontend-app/src/components/Header.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// ΔΙΟΡΘΩΣΗ: Προσθήκη ρητής επέκτασης .js για επίλυση σφαλμάτων εισαγωγής (import resolution)
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/cart.context.js";
 
@@ -21,7 +21,6 @@ const Header = () => {
 
   // Define the primary purple color for consistency
   const primaryPurple = "bg-indigo-600 hover:bg-indigo-700";
-  const primaryPurpleText = "text-indigo-400 hover:text-indigo-600";
   const mobileLinkClass =
     "block px-4 py-2 text-white hover:bg-gray-700 rounded-md font-medium transition duration-150";
 
